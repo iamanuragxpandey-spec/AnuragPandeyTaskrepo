@@ -1,9 +1,7 @@
 CREATE DATABASE CollegeNoticeBoardManagementSystem;
 USE CollegeNoticeBoardManagementSystem;
 
--- =========================================
--- Users table (stores students & teachers)
--- =========================================
+
 CREATE TABLE users(
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(30) NOT NULL,
@@ -11,9 +9,7 @@ CREATE TABLE users(
     role ENUM("teacher","student") DEFAULT "student"
 );
 
--- =========================================
--- Notices table (stores all notices)
--- =========================================
+
 CREATE TABLE notices(
     notice_id INT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(50) NOT NULL,
@@ -23,9 +19,6 @@ CREATE TABLE notices(
     FOREIGN KEY (created_by) REFERENCES users(user_id)
 );
 
--- =========================================
--- 1. registerUser : create new user account
--- =========================================
 DELIMITER //
 
 CREATE PROCEDURE registerUser(
@@ -46,9 +39,9 @@ CALL registerUser('Student One', '1111', 'student');
 
 SELECT * FROM users;
 
--- =========================================
+
 -- 2. login : check user credentials
--- =========================================
+
 DELIMITER //
 
 CREATE PROCEDURE login(
@@ -78,9 +71,8 @@ END //
 
 DELIMITER ;
 
--- =========================================
 -- 3. checkpermission : teacher validation
--- =========================================
+
 DELIMITER //
 
 CREATE PROCEDURE checkpermission(
@@ -106,9 +98,9 @@ END //
 
 DELIMITER ;
 
--- =========================================
+
 -- 4. createnotice : add new notice
--- =========================================
+
 DELIMITER //
 
 CREATE PROCEDURE createnotice(
@@ -137,9 +129,9 @@ END //
 
 DELIMITER ;
 
--- =========================================
+
 -- 5. viewnotices : show all notices
--- =========================================
+
 DELIMITER //
 
 CREATE PROCEDURE viewnotices()
@@ -151,9 +143,8 @@ END //
 
 DELIMITER ;
 
--- =========================================
 -- 6. updatenotice : edit existing notice
--- =========================================
+
 DELIMITER //
 
 CREATE PROCEDURE updatenotice(
@@ -185,9 +176,9 @@ END //
 
 DELIMITER ;
 
--- =========================================
+
 -- 7. deletenotice : remove a notice
--- =========================================
+-
 DELIMITER //
 
 CREATE PROCEDURE deletenotice(
