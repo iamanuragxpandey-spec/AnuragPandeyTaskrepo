@@ -1,0 +1,216 @@
+CREATE DATABASE CollegeNoticeBoardManagementSystem;
+USE CollegeNoticeBoardManagementSystem;
+
+-- =========================================
+-- Users table (stores students & teachers)
+-- =========================================
+CREATE TABLE users(
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(30) NOT NULL,
+    user_password VARCHAR(30) NOT NULL,
+    role ENUM("teacher","student") DEFAULT "student"
+);
+
+-- =========================================
+-- Notices table (stores all notices)
+-- =========================================
+CREATE TABLE notices(
+    notice_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    created_by INT NOT NULL,
+    created_at DATE DEFAULT (CURDATE()),
+    FOREIGN KEY (created_by) REFERENCES users(user_id)
+);
+
+-- =========================================
+-- 1. registerUser : create new user account
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE registerUser(
+    IN u_name VARCHAR(30),
+    IN u_password VARCHAR(30),
+    IN u_role VARCHAR(10)
+)
+BEGIN
+    INSERT INTO users(username, user_password, role)
+    VALUES(u_name, u_password, u_role);
+END //
+
+DELIMITER ;
+
+-- Sample users
+CALL registerUser('Anurag Pandey', '2063', 'teacher');
+CALL registerUser('Student One', '1111', 'student');
+
+SELECT * FROM users;
+
+-- =========================================
+-- 2. login : check user credentials
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE login(
+    IN u_name VARCHAR(30),
+    IN u_password VARCHAR(30)
+)
+BEGIN
+    DECLARE nam VARCHAR(30);
+    DECLARE pass VARCHAR(30);
+
+    SELECT username, user_password
+    INTO nam, pass
+    FROM users
+    WHERE username = u_name;
+
+    IF nam IS NULL THEN
+        SELECT "User does not exist" AS message;
+
+    ELSEIF u_password != pass THEN
+        SELECT "Invalid password" AS message;
+
+    ELSE
+        SELECT "Login successful" AS message;
+    END IF;
+
+END //
+
+DELIMITER ;
+
+-- =========================================
+-- 3. checkpermission : teacher validation
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE checkpermission(
+    IN u_name VARCHAR(30),
+    OUT isAllowed BOOLEAN
+)
+BEGIN
+    DECLARE u_role VARCHAR(30);
+
+    SELECT role
+    INTO u_role
+    FROM users
+    WHERE username = u_name;
+
+    IF u_role != "teacher" THEN
+        SELECT "User does not have permission for notice management" AS message;
+        SET isAllowed = FALSE;
+    ELSE
+        SET isAllowed = TRUE;
+    END IF;
+
+END //
+
+DELIMITER ;
+
+-- =========================================
+-- 4. createnotice : add new notice
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE createnotice(
+    IN n_title VARCHAR(50),
+    IN n_content TEXT,
+    IN u_id INT
+)
+BEGIN
+    DECLARE nam VARCHAR(30);
+
+    SELECT username
+    INTO nam
+    FROM users
+    WHERE user_id = u_id;
+
+    CALL checkpermission(nam, @isAllowed);
+
+    IF @isAllowed THEN
+        INSERT INTO notices(title, content, created_by)
+        VALUES(n_title, n_content, u_id);
+
+        SELECT "Notice posted successfully" AS message;
+    END IF;
+
+END //
+
+DELIMITER ;
+
+-- =========================================
+-- 5. viewnotices : show all notices
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE viewnotices()
+BEGIN
+    SELECT n.title, n.content, u.username
+    FROM notices n
+    JOIN users u ON u.user_id = n.created_by;
+END //
+
+DELIMITER ;
+
+-- =========================================
+-- 6. updatenotice : edit existing notice
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE updatenotice(
+    IN id INT,
+    IN u_title VARCHAR(50),
+    IN u_content TEXT,
+    IN u_id INT
+)
+BEGIN
+    DECLARE nam VARCHAR(30);
+
+    SELECT username
+    INTO nam
+    FROM users
+    WHERE user_id = u_id;
+
+    CALL checkpermission(nam, @isAllowed);
+
+    IF @isAllowed THEN
+        UPDATE notices
+        SET title = u_title,
+            content = u_content
+        WHERE notice_id = id;
+
+        SELECT "Notice updated successfully" AS message;
+    END IF;
+
+END //
+
+DELIMITER ;
+
+-- =========================================
+-- 7. deletenotice : remove a notice
+-- =========================================
+DELIMITER //
+
+CREATE PROCEDURE deletenotice(
+    IN n_id INT,
+    IN u_id INT
+)
+BEGIN
+    DECLARE nam VARCHAR(30);
+
+    SELECT username
+    INTO nam
+    FROM users
+    WHERE user_id = u_id;
+
+    CALL checkpermission(nam, @isAllowed);
+
+    IF @isAllowed THEN
+        DELETE FROM notices
+        WHERE notice_id = n_id;
+
+        SELECT "Notice deleted successfully" AS message;
+    END IF;
+
+END //
+
+DELIMITER ;
